@@ -49,40 +49,9 @@ Connector.isTrackArtDefault = (url) => {
 	return Boolean(url?.includes('cover_track_default'));
 };
 
-Connector.getTrack = () => {
-	if (Connector.getAlbum()) {
-		return Util.getTextFromSelectors('ytmusic-player-bar .title');
-	}
 
-	let artist;
-	let track;
-	const metadata = mediaInfo.metadata;
 
-	({ artist, track } = Util.processYtVideoTitle(metadata?.title));
-	if (!artist) {
-		artist = metadata?.artist;
-	}
 
-	return track;
-}
-
-Connector.getArtist = () => {
-	if (Connector.getAlbum()) {
-		let subtitle = Util.getTextFromSelectors('ytmusic-player-bar .byline');
-		return subtitle?.split(" • ")[0];
-	}
-
-	let artist;
-	let track;
-	const metadata = mediaInfo.metadata;
-
-	({ artist, track } = Util.processYtVideoTitle(metadata?.title));
-	if (!artist) {
-		artist = metadata?.artist;
-	}
-
-	return artist;
-}
 
 Connector.getAlbum = () => {
 	const byline = document.querySelector('ytmusic-player-bar .byline');
@@ -114,19 +83,22 @@ Connector.getTrackArt = () => {
 };
 
 Connector.getArtistTrack = () => {
+	if (Connector.getAlbum()) {
+		const track = Util.getTextFromSelectors('ytmusic-player-bar .title');
+		const subtitle = Util.getTextFromSelectors('ytmusic-player-bar .byline');
+		const artist = subtitle?.split(' • ')[0];
+		return { artist, track };
+	}
+
 	let artist;
 	let track;
 	const metadata = mediaInfo.metadata;
 
-	if (metadata?.album) {
-		artist = metadata.artist;
-		track = metadata.title;
-	} else {
-		({ artist, track } = Util.processYtVideoTitle(metadata?.title));
-		if (!artist) {
-			artist = metadata?.artist;
-		}
+	({ artist, track } = Util.processYtVideoTitle(metadata?.title));
+	if (!artist) {
+		artist = metadata?.artist;
 	}
+
 	return { artist, track };
 };
 
