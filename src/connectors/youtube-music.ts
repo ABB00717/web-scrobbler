@@ -43,13 +43,46 @@ Connector.onScriptEvent = (event) => {
 };
 
 Connector.playerSelector = 'ytmusic-player-bar';
-Connector.trackSelector = 'ytmusic-player-bar .title';
-Connector.artistSelector = 'ytmusic-player-bar .byline';
 
 Connector.isTrackArtDefault = (url) => {
 	// Self-uploaded tracks could not have cover arts
 	return Boolean(url?.includes('cover_track_default'));
 };
+
+Connector.getTrack = () => {
+	if (Connector.getAlbum()) {
+		return Util.getTextFromSelectors('ytmusic-player-bar .title');
+	}
+
+	let artist;
+	let track;
+	const metadata = mediaInfo.metadata;
+
+	({ artist, track } = Util.processYtVideoTitle(metadata?.title));
+	if (!artist) {
+		artist = metadata?.artist;
+	}
+
+	return track;
+}
+
+Connector.getArtist = () => {
+	if (Connector.getAlbum()) {
+		let subtitle = Util.getTextFromSelectors('ytmusic-player-bar .byline');
+		return subtitle?.split(" • ")[0];
+	}
+
+	let artist;
+	let track;
+	const metadata = mediaInfo.metadata;
+
+	({ artist, track } = Util.processYtVideoTitle(metadata?.title));
+	if (!artist) {
+		artist = metadata?.artist;
+	}
+
+	return artist;
+}
 
 Connector.getAlbum = () => {
 	const byline = document.querySelector('ytmusic-player-bar .byline');
@@ -68,7 +101,6 @@ Connector.getAlbum = () => {
 					return child.textContent;
 				}
 
-				console.log("No Album!");
 				return null;
 			}
 		}
@@ -85,13 +117,11 @@ Connector.getArtistTrack = () => {
 	let artist;
 	let track;
 	const metadata = mediaInfo.metadata;
-	console.log(metadata);
 
 	if (metadata?.album) {
 		artist = metadata.artist;
 		track = metadata.title;
 	} else {
-		console.log("Parse from Title");
 		({ artist, track } = Util.processYtVideoTitle(metadata?.title));
 		if (!artist) {
 			artist = metadata?.artist;
@@ -128,17 +158,12 @@ function filterYoutubeIfNonAlbum(text: string) {
 	return Connector.getAlbum() ? text : MetadataFilter.youtube(text);
 }
 
-function cleanUpArtist(text: string) {
-	return text.split(' • ')[0];
-}
-
 const youtubeMusicFilter = MetadataFilter.createFilter({
 	track: [
 		filterYoutubeIfNonAlbum,
 		MetadataFilter.removeRemastered,
 		MetadataFilter.removeLive,
 	],
-	artists: cleanUpArtist,
 	album: [MetadataFilter.removeRemastered, MetadataFilter.removeLive],
 });
 
