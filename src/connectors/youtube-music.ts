@@ -1,4 +1,4 @@
-export {};
+export { };
 
 /**
  * Quick links to debug and test the connector:
@@ -43,13 +43,38 @@ Connector.onScriptEvent = (event) => {
 };
 
 Connector.playerSelector = 'ytmusic-player-bar';
+Connector.trackSelector = 'ytmusic-player-bar .title';
+Connector.artistSelector = 'ytmusic-player-bar .byline';
 
 Connector.isTrackArtDefault = (url) => {
 	// Self-uploaded tracks could not have cover arts
 	return Boolean(url?.includes('cover_track_default'));
 };
 
-Connector.getAlbum = () => mediaInfo.metadata?.album;
+Connector.getAlbum = () => {
+	const byline = document.querySelector('ytmusic-player-bar .byline');
+	const children = byline?.children;
+
+	if (children) {
+		let foundSeparator = false;
+		for (const child of children) {
+			if (child?.textContent.includes(' • ')) {
+				foundSeparator = true;
+				continue;
+			}
+
+			if (foundSeparator) {
+				if (child.tagName === "A") {
+					return child.textContent;
+				}
+
+				console.log("No Album!");
+				return null;
+			}
+		}
+		return null;
+	}
+};
 
 Connector.getTrackArt = () => {
 	const artworks = mediaInfo.metadata?.artwork;
@@ -60,11 +85,13 @@ Connector.getArtistTrack = () => {
 	let artist;
 	let track;
 	const metadata = mediaInfo.metadata;
+	console.log(metadata);
 
 	if (metadata?.album) {
 		artist = metadata.artist;
 		track = metadata.title;
 	} else {
+		console.log("Parse from Title");
 		({ artist, track } = Util.processYtVideoTitle(metadata?.title));
 		if (!artist) {
 			artist = metadata?.artist;
@@ -101,12 +128,17 @@ function filterYoutubeIfNonAlbum(text: string) {
 	return Connector.getAlbum() ? text : MetadataFilter.youtube(text);
 }
 
+function cleanUpArtist(text: string) {
+	return text.split(' • ')[0];
+}
+
 const youtubeMusicFilter = MetadataFilter.createFilter({
 	track: [
 		filterYoutubeIfNonAlbum,
 		MetadataFilter.removeRemastered,
 		MetadataFilter.removeLive,
 	],
+	artists: cleanUpArtist,
 	album: [MetadataFilter.removeRemastered, MetadataFilter.removeLive],
 });
 
