@@ -49,33 +49,7 @@ Connector.isTrackArtDefault = (url) => {
 	return Boolean(url?.includes('cover_track_default'));
 };
 
-
-
-
-
-Connector.getAlbum = () => {
-	const byline = document.querySelector('ytmusic-player-bar .byline');
-	const children = byline?.children;
-
-	if (children) {
-		let foundSeparator = false;
-		for (const child of children) {
-			if (child?.textContent.includes(' • ')) {
-				foundSeparator = true;
-				continue;
-			}
-
-			if (foundSeparator) {
-				if (child.tagName === "A") {
-					return child.textContent;
-				}
-
-				return null;
-			}
-		}
-		return null;
-	}
-};
+Connector.getAlbum = () => mediaInfo.metadata?.album;
 
 Connector.getTrackArt = () => {
 	const artworks = mediaInfo.metadata?.artwork;
